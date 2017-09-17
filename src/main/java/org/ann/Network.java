@@ -1,8 +1,11 @@
 package org.ann;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.ann.utils.MatrixUtilities;
@@ -15,8 +18,9 @@ public class Network {
 	private int[] sizes;
 	private RealMatrix[] biases;
 	private RealMatrix[] weights;
+	public TrainTracker trainTracker = TrainTracker.dummy();
 
-	public Network(int[] sizes) {
+	public Network(int... sizes) {
 		this.numLayers = sizes.length;
 		this.sizes = sizes;
 		this.biases = new RealMatrix[sizes.length - 1];
@@ -59,9 +63,11 @@ public class Network {
 				miniBatches.add(trainingDataSet.subList(k, k + miniBatchSize));
 			}
 
-			for (List<double[][]> miniBatch : miniBatches) {
-				updateMiniBatch(miniBatch, eta);
+			for (int miniBatch = 0; miniBatch < miniBatches.size(); miniBatch++) {
+				updateMiniBatch(miniBatches.get(miniBatch), eta);
+				trainTracker.accept(this, j, miniBatch);
 			}
+
 		}
 	}
 
@@ -123,7 +129,7 @@ public class Network {
 		RealMatrix A = costDerivative(activations.get(activations.size() - 1), MatrixUtils.createColumnRealMatrix(y));
 		RealMatrix B = sigmoidPrime(zs.get(zs.size() - 1));
 		RealMatrix delta = MatrixUtilities.apply(A, B, (a, b) -> a * b);
-		
+
 		nablaB[nablaB.length - 1] = delta;
 		nablaW[nablaW.length - 1] = delta.multiply(activations.get(activations.size() - 2)
 				.transpose());

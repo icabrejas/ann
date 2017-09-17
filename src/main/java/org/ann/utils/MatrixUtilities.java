@@ -44,5 +44,16 @@ public class MatrixUtilities {
 
 		return randomMatrix;
 	}
+
+	public static int argmax(double[] x) {
+		int index;
+		double max = x[index = 0];
+		for (int i = 1; i < x.length; i++) {
+			if (max < x[i]) {
+				max = x[index = i];
+			}
+		}
+		return index;
+	}
 	
 }

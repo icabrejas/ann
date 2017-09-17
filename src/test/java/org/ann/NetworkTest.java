@@ -146,12 +146,9 @@ public class NetworkTest extends TestCase {
 	private Network train(int[] layers, List<double[][]> trainingDataSet) {
 		System.out.println(Arrays.toString(layers));
 		Network ann = new Network(layers);
-		int epochs = 5 * (layers[0] * layers[0]);
-		System.out.println(">> " + String.format("%02d", 0) + ": " + rmse(ann, trainingDataSet));
-		for (int cycle = 1; cycle <= 5; cycle++) {
-			ann.SGD(trainingDataSet, epochs, trainingDataSet.size() / 50, 10.0);
-			System.out.println(">> " + String.format("%02d", cycle * epochs) + ": " + rmse(ann, trainingDataSet));
-		}
+		ann.trainTracker = TrainTracker.rmse(trainingDataSet, 100);
+		int epochs = 25 * (layers[0] * layers[0]);
+		ann.SGD(trainingDataSet, epochs, trainingDataSet.size() / 50, 10.0);
 		System.out.println();
 		return ann;
 	}
