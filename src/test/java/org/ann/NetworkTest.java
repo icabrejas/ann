@@ -1,8 +1,11 @@
 package org.ann;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 
@@ -16,7 +19,7 @@ public class NetworkTest extends TestCase {
 	@Test
 	public void testDimension() {
 		int[] layers = { 2, 7, 5 };
-		Network ann = new Network(layers);
+		Network ann = Network.basic(layers);
 
 		assertEquals(2, ann.getWeights().length);
 		assertEquals(2, ann.getBiases().length);
@@ -102,11 +105,16 @@ public class NetworkTest extends TestCase {
 
 	@Test
 	public void testParaboloid() {
+		long millis = System.currentTimeMillis();
 		System.out.println("f(x, y) = (x^2 + y^2)/2");
 		int[] layers = { 2, 7, 1 };
 		List<double[][]> trainingDataSet = getTrainingDataSet(x -> (x[0] * x[0] + x[1] * x[1]) / 2, layers[0], 1000);
 		Network ann = train(layers, trainingDataSet);
 		assertRMSE(trainingDataSet, ann);
+		millis = System.currentTimeMillis() - millis;
+		SimpleDateFormat format = new SimpleDateFormat("ss.SSS");
+		format.setTimeZone(TimeZone.getTimeZone("GMT"));
+		System.out.println(">>>> " + format.format(new Date(millis)));
 	}
 
 	private void assertRMSE(List<double[][]> trainingDataSet, Network ann) {
@@ -114,7 +122,7 @@ public class NetworkTest extends TestCase {
 	}
 
 	private List<double[][]> getIdealANNData(int[] layers) {
-		Network idealANN = new Network(layers);
+		Network idealANN = Network.basic(layers);
 		return getTrainingDataSet(idealANN::feedForward, layers[0], layers[layers.length - 1], 1000);
 	}
 
@@ -145,7 +153,7 @@ public class NetworkTest extends TestCase {
 
 	private Network train(int[] layers, List<double[][]> trainingDataSet) {
 		System.out.println(Arrays.toString(layers));
-		Network ann = new Network(layers);
+		Network ann = Network.basic(layers);
 		ann.trainTracker = TrainTracker.rmse(trainingDataSet, 100);
 		int epochs = 25 * (layers[0] * layers[0]);
 		ann.SGD(trainingDataSet, epochs, trainingDataSet.size() / 50, 10.0);
