@@ -1,5 +1,6 @@
 package org.ann;
 
+import java.util.List;
 import java.util.function.Function;
 
 import org.ann.utils.MatrixUtilities;
@@ -28,19 +29,19 @@ public interface TrainTracker {
 		};
 	}
 
-	public static TrainTracker rmse(Iterable<double[][]> dataSet, int period) {
+	public static TrainTracker rmse(List<double[][]> dataSet, int period) {
 		return logger(TrainTracker.Logger.rmse(dataSet), period);
 	}
 
-	public static TrainTracker rmse(Iterable<double[][]> dataSet) {
+	public static TrainTracker rmse(List<double[][]> dataSet) {
 		return logger(TrainTracker.Logger.rmse(dataSet));
 	}
 
-	public static TrainTracker testError(Iterable<double[][]> dataSet, int period) {
+	public static TrainTracker testError(List<double[][]> dataSet, int period) {
 		return logger(TrainTracker.Logger.testError(dataSet), period);
 	}
 
-	public static TrainTracker testError(Iterable<double[][]> dataSet) {
+	public static TrainTracker testError(List<double[][]> dataSet) {
 		return logger(TrainTracker.Logger.testError(dataSet));
 	}
 
@@ -52,7 +53,7 @@ public interface TrainTracker {
 		return (ann, epoch, minibatch) -> System.out.println(logger.log(ann, epoch, minibatch));
 	}
 
-	public static String rmse(Network ann, Iterable<double[][]> dataSet) {
+	public static String rmse(Network ann, List<double[][]> dataSet) {
 		EuclideanDistance distance = new EuclideanDistance();
 		Mean mean = new Mean();
 		for (double[][] dataPair : dataSet) {
@@ -64,16 +65,30 @@ public interface TrainTracker {
 		return String.format("%.4f", Math.sqrt(mean.getResult()));
 	}
 
-	public static String testError(Network ann, Iterable<double[][]> dataSet) {
+	public static String testError(Network ann, List<double[][]> dataSet) {
 		Mean mean = new Mean();
-		for (double[][] dataPair : dataSet) {
-			double[] x = dataPair[0];
-			double[] y = dataPair[1];
-			double[] y_ = ann.feedForward(x);
-			mean.increment(MatrixUtilities.argmax(y) != MatrixUtilities.argmax(y_) ? 1 : 0);
-		}
+		dataSet.parallelStream()
+				.map((double[][] dataPair) -> {
+					double[] x = dataPair[0];
+					double[] y = dataPair[1];
+					double[] y_ = ann.feedForward(x);
+					return MatrixUtilities.argmax(y) != MatrixUtilities.argmax(y_) ? 1 : 0;
+				})
+				.forEach(mean::increment);
 		return String.format("%.4f", Math.sqrt(mean.getResult()));
 	}
+
+	// public static String testError(Network ann, List<double[][]> dataSet) {
+	// Mean mean = new Mean();
+	// for (double[][] dataPair : dataSet) {
+	// double[] x = dataPair[0];
+	// double[] y = dataPair[1];
+	// double[] y_ = ann.feedForward(x);
+	// mean.increment(MatrixUtilities.argmax(y) != MatrixUtilities.argmax(y_) ?
+	// 1 : 0);
+	// }
+	// return String.format("%.4f", Math.sqrt(mean.getResult()));
+	// }
 
 	public static interface Logger {
 
@@ -84,11 +99,11 @@ public interface TrainTracker {
 					+ ": " + evaluator.apply(ann);
 		}
 
-		public static TrainTracker.Logger rmse(Iterable<double[][]> dataSet) {
+		public static TrainTracker.Logger rmse(List<double[][]> dataSet) {
 			return logger(ann -> TrainTracker.rmse(ann, dataSet));
 		}
 
-		public static TrainTracker.Logger testError(Iterable<double[][]> dataSet) {
+		public static TrainTracker.Logger testError(List<double[][]> dataSet) {
 			return logger(ann -> TrainTracker.testError(ann, dataSet));
 		}
 
